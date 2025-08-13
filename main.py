@@ -107,36 +107,94 @@ class CommandPrompt(tk.Frame):
         self.text.insert(tk.END, result + '\n')
         self.entry.delete(0, tk.END)
 
+
+# Bootloader Screen
+class BootLoader(tk.Frame):
+    def __init__(self, master, on_finish):
+        super().__init__(master)
+        self.pack(fill=tk.BOTH, expand=True)
+        self.label = tk.Label(self, text='Py-OS Booting...', font=('Arial', 24))
+        self.label.pack(expand=True)
+        self.after(2000, on_finish)  # Simulasi loading 2 detik
+
+# Login Screen
+class LoginScreen(tk.Frame):
+    def __init__(self, master, on_login):
+        super().__init__(master)
+        self.pack(fill=tk.BOTH, expand=True)
+        self.label = tk.Label(self, text='Login ke Py-OS', font=('Arial', 20))
+        self.label.pack(pady=20)
+        self.user_label = tk.Label(self, text='Username:')
+        self.user_label.pack()
+        self.username = tk.Entry(self)
+        self.username.pack()
+        self.pass_label = tk.Label(self, text='Password:')
+        self.pass_label.pack()
+        self.password = tk.Entry(self, show='*')
+        self.password.pack()
+        self.login_btn = tk.Button(self, text='Login', command=self.try_login)
+        self.login_btn.pack(pady=10)
+        self.on_login = on_login
+
+    def try_login(self):
+        user = self.username.get()
+        pw = self.password.get()
+        # Untuk demo, username: admin, password: admin
+        if user == 'admin' and pw == 'admin':
+            self.on_login(user)
+        else:
+            messagebox.showerror('Login Gagal', 'Username atau password salah!')
+
+# Home Screen
+class HomeScreen(tk.Frame):
+    def __init__(self, master, show_explorer, show_cmd):
+        super().__init__(master)
+        self.pack(fill=tk.BOTH, expand=True)
+        self.label = tk.Label(self, text='Selamat Datang di Py-OS', font=('Arial', 20))
+        self.label.pack(pady=20)
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=10)
+        tk.Button(btn_frame, text='File Explorer', command=show_explorer, width=20).pack(side=tk.LEFT, padx=10)
+        tk.Button(btn_frame, text='Command Prompt', command=show_cmd, width=20).pack(side=tk.LEFT, padx=10)
+
 class PyOS(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('Py-OS')
         self.geometry('800x600')
-        self.create_widgets()
-
-    def create_widgets(self):
-        self.tabs = tk.Frame(self)
-        self.tabs.pack(side=tk.TOP, fill=tk.X)
-        self.btn_explorer = tk.Button(self.tabs, text='File Explorer', command=self.show_explorer)
-        self.btn_explorer.pack(side=tk.LEFT)
-        self.btn_cmd = tk.Button(self.tabs, text='Command Prompt', command=self.show_cmd)
-        self.btn_cmd.pack(side=tk.LEFT)
-        self.container = tk.Frame(self)
-        self.container.pack(fill=tk.BOTH, expand=True)
         self.current = None
-        self.show_explorer()
+        self.username = None
+        self.show_bootloader()
+
+    def clear_current(self):
+        if self.current:
+            self.current.pack_forget()
+            self.current.destroy()
+            self.current = None
+
+    def show_bootloader(self):
+        self.clear_current()
+        self.current = BootLoader(self, self.show_login)
+
+    def show_login(self):
+        self.clear_current()
+        self.current = LoginScreen(self, self.on_login_success)
+
+    def on_login_success(self, username):
+        self.username = username
+        self.show_home()
+
+    def show_home(self):
+        self.clear_current()
+        self.current = HomeScreen(self, self.show_explorer, self.show_cmd)
 
     def show_explorer(self):
-        if self.current:
-            self.current.pack_forget()
-        self.current = FileExplorer(self.container)
-        self.current.pack(fill=tk.BOTH, expand=True)
+        self.clear_current()
+        self.current = FileExplorer(self)
 
     def show_cmd(self):
-        if self.current:
-            self.current.pack_forget()
-        self.current = CommandPrompt(self.container)
-        self.current.pack(fill=tk.BOTH, expand=True)
+        self.clear_current()
+        self.current = CommandPrompt(self)
 
 if __name__ == '__main__':
     app = PyOS()
